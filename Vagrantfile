@@ -35,7 +35,7 @@ Vagrant.configure("2") do |config|
       manager.vm.network :forwarded_port, guest: 80, host: 80
 
       manager.vm.provision "setup-manager", type: "ansible" do |ansible|
-        ansible.playbook = "#{ANSIBLE_PATH}/dev/02_setup_manager.yml"
+        ansible.playbook = "#{ANSIBLE_PATH}/setup_manager.yml"
         ansible.become = true
       end
     end
@@ -55,7 +55,7 @@ Vagrant.configure("2") do |config|
       worker.vm.hostname = "worker"
 
       worker.vm.provision "setup-worker", type: "ansible" do |ansible|
-        ansible.playbook = "#{ANSIBLE_PATH}/dev/03_setup_worker.yml"
+        ansible.playbook = "#{ANSIBLE_PATH}/setup_worker.yml"
         ansible.become = true
       end
     end
