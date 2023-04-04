@@ -1,0 +1,14 @@
+- name: get join-token
+  command: docker swarm join-token worker -q
+  register: worker_token
+
+- name: create join-token file
+  copy:
+    content: "{{ worker_token.stdout }}"
+    dest: "{{ SWARM_JOIN_TOKEN_FILE }}"
+
+- name: copy swarm token file
+  fetch:
+    src: "{{ SWARM_JOIN_TOKEN_FILE }}"
+    dest: "{{ LOCAL_SWARM_JOIN_TOKEN_FILE }}"
+    flat: yes

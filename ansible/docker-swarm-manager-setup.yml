@@ -1,0 +1,20 @@
+- name: Setup docker swarm manager
+  gather_facts: yes
+  hosts: all
+
+  vars:
+    SWARM_MANAGER_ADDRESS: "192.168.0.100:2377"
+    REGISTRY_HOST: "192.168.0.10"
+    REGISTRY_HOST_AND_PORT: "{{ REGISTRY_HOST }}:5043"
+    SWARM_JOIN_TOKEN_FILE: /assets/docker-swarm-join-token
+    LOCAL_SWARM_JOIN_TOKEN_FILE: ".assets/docker-swarm-join-token"
+
+  tasks:
+    - name: Setup docker swarm
+      docker_swarm:
+        advertise_addr: "{{ SWARM_MANAGER_ADDRESS }}"
+        listen_addr: "{{ SWARM_MANAGER_ADDRESS }}"
+        state: present
+
+    - include_tasks: tasks/_get_swarm_token.yml
+
