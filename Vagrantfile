@@ -8,10 +8,12 @@ WORKER_IP = "192.168.0.101"
 ANSIBLE_PATH = File.expand_path("./ansible")
 
 Vagrant.configure("2") do |config|
-    config.vm.box = "bento/ubuntu-22.10"
+    config.vm.box = "debian/bullseye64"
     config.ssh.insert_key = false
 
     config.vm.synced_folder ".assets", "/assets"
+    config.vm.synced_folder "deploy", "/deploy"
+    config.vm.synced_folder "scripts", "/scripts"
 
     config.vm.provision "docker-install", type: "ansible" do |ansible|
       ansible.playbook = "#{ANSIBLE_PATH}/docker-install.yml"
@@ -32,9 +34,10 @@ Vagrant.configure("2") do |config|
         vb.customize ["modifyvm", :id, "--ioapic", "on"]
       end
 
-      manager.vm.network :forwarded_port, guest: 80, host: 80
+      manager.vm.network :forwarded_port, guest: 80, host: 9080
+      manager.vm.network :forwarded_port, guest: 443, host: 9443
 
-      manager.vm.provision "setup-manager", type: "ansible" do |ansible|
+      manager.vm.provision "setup-manager", type: "ansible", run: "never"  do |ansible|
         ansible.playbook = "#{ANSIBLE_PATH}/setup_manager.yml"
         ansible.become = true
       end
@@ -54,7 +57,7 @@ Vagrant.configure("2") do |config|
       worker.vm.network :private_network, ip: WORKER_IP
       worker.vm.hostname = "worker"
 
-      worker.vm.provision "setup-worker", type: "ansible" do |ansible|
+      worker.vm.provision "setup-worker", type: "ansible", run: "never" do |ansible|
         ansible.playbook = "#{ANSIBLE_PATH}/setup_worker.yml"
         ansible.become = true
       end

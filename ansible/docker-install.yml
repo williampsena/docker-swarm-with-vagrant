@@ -43,3 +43,14 @@
 
     - name: Ensure docker service enabled
       command: sudo systemctl enable docker
+
+    - name: Adding docker users (without sudo)
+      user:
+        name: vagrant
+        append: yes
+        groups: docker
+      become: true
+
+    - name: Reset ssh connection to allow user changes to affect ansible user
+      meta:
+        reset_connection

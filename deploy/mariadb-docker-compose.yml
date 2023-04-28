@@ -1,0 +1,78 @@
+version: "3.9"
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    networks:
+      - mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mariadb-pwd
+    volumes:
+      - "db:/var/lib/mysql"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+      placement:
+        constraints:
+          - node.role == worker
+    secrets:
+      - mariadb-pwd
+
+  dump:
+    image: mariadb:latest
+    command: bash -c "mkdir -p /dumps && /usr/bin/mysqldump -v -h db -u root --password=/run/secrets/mariadb-pwd foo | gzip -9 > /dumps/backup-$$(date +%Y%m%d-%H%M%S).sql.gz && ls -al /dumps/"
+    networks:
+      - mariadb
+    volumes:
+      - "dumps:/dumps"
+    environment:
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb-pwd
+    deploy:
+      labels:
+        - "swarm.cronjob.enable=true"
+        - "swarm.cronjob.schedule=* */5 * * *"
+        - "swarm.cronjob.skip-running=true"
+      replicas: 0
+      restart_policy:
+        condition: none
+    secrets:
+      - mariadb-pwd
+
+  adminer:
+    image: adminer
+    networks:
+      - traefik
+      - mariadb
+    environment:
+      ADMINER_DESIGN: dracula
+    deploy:
+      replicas: 1
+      labels:
+        - "app=adminer"
+        - "traefik.enable=true"
+        - "traefik.http.routers.adminer.rule=Host(`adminer.localhost`)"
+        - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+        - "traefik.docker.network=traefik"
+volumes:
+  db:
+  dumps:
+
+networks:
+  mariadb:
+    name: mariadb
+    driver: overlay
+  traefik:
+    external: true
+
+secrets:
+  mariadb-pwd:
+    external: true

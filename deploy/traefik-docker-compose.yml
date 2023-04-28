@@ -1,0 +1,58 @@
+version: '3.9'
+
+services:
+  traefik:
+    image: traefik:3.0
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+    command:
+      --global.sendAnonymousUsage=false
+      --api.insecure=false
+      --api.dashboard=false
+      --api.debug=false
+      --log.level=INFO
+      --providers.docker.endpoint=unix:///var/run/docker.sock
+      --providers.docker.swarmMode=true
+      --providers.docker.exposedbyDefault=false
+      --providers.docker.network=traefik
+      --entrypoints.web.address=:80
+      --entrypoints.websecure.address=:443
+      --ping=true
+      --accesslog=true
+    networks:
+      - traefik
+    deploy:
+      labels:
+        - traefik.http.services.traefik.loadbalancer.server.port=80
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+  
+  whoami:
+    image: "traefik/whoami"
+    networks:
+      - traefik
+    deploy:
+      replicas: 2
+      placement:
+        max_replicas_per_node: 1
+      labels:
+        - "app=whoami"
+        - "traefik.enable=true"
+        - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+        - "traefik.http.services.whoami.loadbalancer.server.port=80"
+        - "traefik.docker.network=traefik"
+
+networks:
+  traefik:
+    name: traefik
+    driver: overlay

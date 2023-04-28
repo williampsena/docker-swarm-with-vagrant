@@ -1,0 +1,21 @@
+- name: Setup docker swarm worker
+  gather_facts: yes
+  hosts: all
+
+  vars:
+    SWARM_MANAGER_ADDRESS: "192.168.0.100:2377"
+    SWARM_JOIN_TOKEN: "{{ lookup('file', '../.assets/docker-swarm-join-token') }}"
+  
+
+  tasks:
+    - name: Setup docker worker
+      docker_swarm:
+        state: join
+        join_token: "{{ SWARM_JOIN_TOKEN }}"
+        remote_addrs: ["{{ SWARM_MANAGER_ADDRESS }}"]
+
+    - name: Add node labels
+      docker_node:
+        hostname: manager
+        labels:
+          app: host

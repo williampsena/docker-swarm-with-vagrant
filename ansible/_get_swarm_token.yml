@@ -6,9 +6,3 @@
   copy:
     content: "{{ worker_token.stdout }}"
     dest: "{{ SWARM_JOIN_TOKEN_FILE }}"
-
-- name: copy swarm token file
-  fetch:
-    src: "{{ SWARM_JOIN_TOKEN_FILE }}"
-    dest: "{{ LOCAL_SWARM_JOIN_TOKEN_FILE }}"
-    flat: yes
